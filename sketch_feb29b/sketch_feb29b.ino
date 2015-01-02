@@ -38,26 +38,23 @@ void setup() {
    
 }
 
+void setColor( int r, int g, int b, long msDelay )
+  {
+
+   SB_CommandMode = 0; // Write to PWM control registers
+   SB_RedCommand = r; // Maximum red
+   SB_GreenCommand = g; // Minimum green
+   SB_BlueCommand = b; // Minimum blue
+   SB_SendPacket();
+
+   delay(msDelay);
+  }
+  
 void SB_SendPacket() {
    SB_CommandPacket = SB_CommandMode & B11;
    SB_CommandPacket = (SB_CommandPacket << 10)  | (SB_BlueCommand & 1023);
    SB_CommandPacket = (SB_CommandPacket << 10)  | (SB_RedCommand & 1023);
    SB_CommandPacket = (SB_CommandPacket << 10)  | (SB_GreenCommand & 1023);
-
-   shiftOut(datapin, clockpin, MSBFIRST, SB_CommandPacket >> 24);
-   shiftOut(datapin, clockpin, MSBFIRST, SB_CommandPacket >> 16);
-   shiftOut(datapin, clockpin, MSBFIRST, SB_CommandPacket >> 8);
-   shiftOut(datapin, clockpin, MSBFIRST, SB_CommandPacket);
-
-   shiftOut(datapin, clockpin, MSBFIRST, SB_CommandPacket >> 24);
-   shiftOut(datapin, clockpin, MSBFIRST, SB_CommandPacket >> 16);
-   shiftOut(datapin, clockpin, MSBFIRST, SB_CommandPacket >> 8);
-   shiftOut(datapin, clockpin, MSBFIRST, SB_CommandPacket);
-
-   shiftOut(datapin, clockpin, MSBFIRST, SB_CommandPacket >> 24);
-   shiftOut(datapin, clockpin, MSBFIRST, SB_CommandPacket >> 16);
-   shiftOut(datapin, clockpin, MSBFIRST, SB_CommandPacket >> 8);
-   shiftOut(datapin, clockpin, MSBFIRST, SB_CommandPacket);
 
    shiftOut(datapin, clockpin, MSBFIRST, SB_CommandPacket >> 24);
    shiftOut(datapin, clockpin, MSBFIRST, SB_CommandPacket >> 16);
@@ -71,21 +68,11 @@ void SB_SendPacket() {
 
 }
 
-void setColor( int r, int g, int b, long msDelay )
-  {
-
-   SB_CommandMode = 0; // Write to PWM control registers
-   SB_RedCommand = r; // Maximum red
-   SB_GreenCommand = g; // Minimum green
-   SB_BlueCommand = b; // Minimum blue
-   SB_SendPacket();
-
-   delay(msDelay);
-  }
-  
 void setColors( long msDelay )
   {
     int  count = MAX_LEDS; //sizeof( leds ) / sizeof( unsigned long );
+
+    digitalWrite( latchpin, LOW );
     
     for ( int i = 0; i < count; i++ )
       {
@@ -95,13 +82,10 @@ void setColors( long msDelay )
       byte green  = ( leds[ i ] & 0x0000ff00 ) >> 8;
       byte blue   = ( leds[ i ] & 0x000000ff );
       
-      SB_CommandPacket = (SB_CommandPacket << 10)  | (SB_BlueCommand & 1023);
-      SB_CommandPacket = (SB_CommandPacket << 10)  | (SB_RedCommand & 1023);
-      SB_CommandPacket = (SB_CommandPacket << 10)  | (SB_GreenCommand & 1023);
-      command  = blue;
-      command  = ( command << 10 ) | red;
-      command  = ( command << 10 ) | green;
-      
+      command  = blue & 0x3ff;
+      command  = ( command << 10 ) | ( red & 0x3ff );
+      command  = ( command << 10 ) | ( green & 0x3ff );
+
       shiftOut( datapin, clockpin, MSBFIRST, command >> 24 );
       shiftOut( datapin, clockpin, MSBFIRST, command >> 16 );
       shiftOut( datapin, clockpin, MSBFIRST, command >> 8 );
@@ -144,23 +128,24 @@ void chaser( unsigned long color1, unsigned long color2, unsigned long color3, i
 
 void loop() {
   
-/*   SB_CommandMode = B00; // Write to PWM control registers
+  for ( int i = 0; i < MAX_LEDS; i++ )
+    {
+   SB_CommandMode = B00; // Write to PWM control registers
    SB_RedCommand = 256; // Maximum red
    SB_GreenCommand = 0; // Minimum green
    SB_BlueCommand = 0; // Minimum blue
    SB_SendPacket();
 
-   delay(50);
- */
+   delay(1000);
+    }
 
-//   setColor( 0, 0, 0, 1000 );
    
    leds[ 0 ] = 0x00ff0000;
    leds[ 1 ] = 0x0000ff00;
    leds[ 2 ] = 0x000000ff;
    leds[ 3 ] = 0x000f0f0f;
    leds[ 4 ] = 0x00000000;
-   setColors( 5000 );
+   setColors( 1000 );
    
 //   for ( int i = 0; i < MAX_LEDS; i++ )
 //     leds[ i ]  = 0;
@@ -173,16 +158,16 @@ void loop() {
 
    for ( int i = 0; i < MAX_LEDS; i++ )
      leds[ i ]  = 0x000000ff;
-   setColors( 2000 );
+   setColors( 1000 );
    
    for ( int i = 0; i < MAX_LEDS; i++ )
      leds[ i ]  = 0x0000ff00;
-   setColors( 2000 );
+   setColors( 1000 );
 
    for ( int i = 0; i < MAX_LEDS; i++ )
      leds[ i ]  = 0x00ff0000;
-   setColors( 2000 );
-   
+   setColors( 1000 );
+
    for ( int i = 0; i < 10; i++ )
      flash( 200, 50 );
      
@@ -196,6 +181,13 @@ void loop() {
       chaser( 0x000000ff, 0, 0x00ff0000, 200 );     
       }
       
+   for ( int j = 0; j < 40; j++ )
+     {
+      chaser( 0x0000007f, 0x000000ff, 0x3f, 200 );     
+      chaser( 0x000000ff, 0x0000003f, 0x7f, 200 );     
+      chaser( 0x0000003f, 0x0000007f, 0xff, 200 );     
+     }
+
 //   for ( int i = 0; i < MAX_LEDS; i++ )
 //     {
 //     unsigned long tmp;
@@ -205,6 +197,8 @@ void loop() {
 //     leds[ MAX_LEDS - 1 ] = tmp;
 //     setColors( 500 );
 //     }
+
+/*
    
    leds[ 0 ] = 0x000f0000;
    leds[ 1 ] = 0x00000f00;
@@ -212,7 +206,9 @@ void loop() {
    leds[ 3 ] = 0x00707070;
    leds[ 4 ] = 0x00f0f0f0;
    setColors( 1000 );
-   
+*/
+
+
 /*
    for ( int i = 0; i < 1024; i += 32 )
      {
