@@ -17,7 +17,7 @@
 
 int8_t clicks=0;
 char id=0;
-int value = 0;
+volatile int value = 0;
 
 Adafruit_7segment matrix = Adafruit_7segment();
 char brightness  = 15;
@@ -196,7 +196,7 @@ void serialEvent()
   while ( Serial.available() )
     {
     char c = (char) Serial.read();
-    if ( c == '\n' )
+    if ( c == '\n' || c == '\r' )
       {
       c = 0;
       fCmdAvailable = 1;
@@ -276,6 +276,10 @@ void loop()
           
         case 'R':
           value = 0;
+          break;
+          
+        case 'C':
+          Serial.println( (char *) szInputBuf );
           break;
           
         default:
