@@ -33,7 +33,7 @@ char id=0;
 #endif
 
 #ifdef  MATRIX
-int value = 0;
+volatile int value = 0;
 
 Adafruit_7segment matrix = Adafruit_7segment();
 char brightness  = 15;
@@ -493,7 +493,7 @@ void serialEvent()
   while ( Serial.available() )
     {
     char c = (char) Serial.read();
-    if ( c == '\n' )
+    if ( c == '\n' || c == '\r' )
       {
       c = 0;
       fCmdAvailable = 1;
@@ -615,6 +615,10 @@ void loop()
           grnPWM = 0;
           bluPWM = 0;
           timer0Routine = NULL;          
+          break;
+          
+        case 'C':
+          Serial.println( (char *) szInputBuf );
           break;
 
         default:
