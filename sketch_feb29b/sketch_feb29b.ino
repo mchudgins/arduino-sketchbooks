@@ -71,34 +71,38 @@ void SB_SendPacket() {
 void setColors( long msDelay )
   {
     int  count = MAX_LEDS; //sizeof( leds ) / sizeof( unsigned long );
-
-    digitalWrite( latchpin, LOW );
+    unsigned long color;
+    
+//    digitalWrite( latchpin, LOW );
     
     for ( int i = 0; i < count; i++ )
       {
       unsigned long command  = 0;
       
-      byte red    = ( leds[ i ] & 0x00ff0000 ) >> 16;
-      byte green  = ( leds[ i ] & 0x0000ff00 ) >> 8;
-      byte blue   = ( leds[ i ] & 0x000000ff );
+      color    = leds[ i ];
+      byte red    = ( color & 0x00ff0000 ) >> 16;
+      byte green  = ( color & 0x0000ff00 ) >> 8;
+      byte blue   = ( color & 0x000000ff );
       
       command  = blue & 0x3ff;
       command  = ( command << 10 ) | ( red & 0x3ff );
       command  = ( command << 10 ) | ( green & 0x3ff );
 
-      shiftOut( datapin, clockpin, MSBFIRST, command >> 24 );
-      shiftOut( datapin, clockpin, MSBFIRST, command >> 16 );
-      shiftOut( datapin, clockpin, MSBFIRST, command >> 8 );
-      shiftOut( datapin, clockpin, MSBFIRST, command );
+      shiftOut( datapin, clockpin, MSBFIRST, ( command >> 24 ) & 0xff );
+      shiftOut( datapin, clockpin, MSBFIRST, ( command >> 16 ) & 0xff );
+      shiftOut( datapin, clockpin, MSBFIRST, ( command >> 8 ) & 0xff );
+      shiftOut( datapin, clockpin, MSBFIRST, command & 0xff );
       
       }
-      
-    delay( 10 );
+
+    delay( 5 );
     digitalWrite( latchpin, HIGH );
-    delay( 10 );
+    delay( 6 );
     digitalWrite( latchpin, LOW );
-    
-    delay( msDelay );
+      
+
+    if ( msDelay )    
+      delay( msDelay );
   }
   
 void flash( int int1, int int2 ) {
@@ -126,68 +130,272 @@ void chaser( unsigned long color1, unsigned long color2, unsigned long color3, i
   
 }
 
+void setLeds( long color )
+  {
+    for ( int i = 0; i < MAX_LEDS; i++ )
+      leds[ i ] = color;
+  }
+  
+void blankem()
+  {
+  setLeds( 0 );
+  }
+
+void lightOneLevel( int level, unsigned long color )
+  {
+    leds[ level ] = color;
+    leds[ level + 5 ] = color;
+    leds[ level + 10 ] = color;
+  }
+  
+void policeLights()
+  {
+    
+  for ( int i = 0; i < 10; i++ )
+    {
+    lightOneLevel( 0, 0xff0000 );
+    lightOneLevel( 1, 0x0000ff );
+    lightOneLevel( 2, 0xff0000 );
+    lightOneLevel( 3, 0x0000ff );
+    lightOneLevel( 4, 0xff0000 );
+    setColors( 100 );
+    for ( int i = 0; i < 2; i++ )
+      {
+      digitalWrite( enablepin, HIGH );
+      delay( 50 );
+      digitalWrite( enablepin, LOW );
+      delay( 50 );
+      }
+
+    lightOneLevel( 0, 0x0000ff );
+    lightOneLevel( 1, 0xff0000 );
+    lightOneLevel( 2, 0x0000ff );
+    lightOneLevel( 3, 0xff0000 );
+    lightOneLevel( 4, 0x0000ff );
+    setColors( 100 );
+    
+    for ( int i = 0; i < 2; i++ )
+      {
+      digitalWrite( enablepin, HIGH );
+      delay( 50 );
+      digitalWrite( enablepin, LOW );
+      delay( 50 );
+      }
+    }
+  }
+  
+void growUp()
+  {
+  blankem();
+  setColors( 0 );
+  
+  for ( int h = 0; h < 5; h++ )
+    {
+      lightOneLevel( h, 0x00ffffff );
+    setColors( 100 );
+    blankem();
+    }
+  }
+  
+void glow( long interval )
+  {
+  long color;
+  blankem();
+  
+  for ( int i = 0; i <= 0x3f; i += 4 )
+    {
+    color = ( (long) i << 16 ) | ( i << 8 ) | i;
+    setLeds( color );
+    setColors( interval );
+    }
+
+  delay( 50 );
+  
+  for ( int i = 0x3f; i >= 0; i -= 4 )
+    {
+    color = ( (long) i << 16 ) | ( i << 8 ) | i;
+    setLeds( color );
+    setColors( interval );
+    }
+  setLeds( 0 );
+  setColors( interval );
+  delay( 25 );
+  }
+
+void blueGlow( long interval )
+  {
+  long color;
+  blankem();
+  
+  for ( int i = 0; i <= 0x3f; i += 4 )
+    {
+    color = i;
+    setLeds( color );
+    setColors( interval );
+    }
+
+  delay( 50 );
+  
+  for ( int i = 0x3f; i >= 0; i -= 4 )
+    {
+    color = i;
+    setLeds( color );
+    setColors( interval );
+    }
+  setLeds( 0 );
+  setColors( interval );
+  delay( 25 );
+  }
+
+void redGlow( long interval )
+  {
+  long color;
+  blankem();
+  
+  for ( int i = 0; i <= 0x3f; i += 4 )
+    {
+    color = ( (long) i ) << 16;
+    setLeds( color );
+    setColors( interval );
+    }
+
+  delay( 50 );
+  
+  for ( int i = 0x3f; i >= 0; i -= 4 )
+    {
+    color = ( (long) i ) << 16;
+    setLeds( color );
+    setColors( interval );
+    }
+  setLeds( 0 );
+  setColors( interval );
+  delay( 25 );
+  }
+
+void greenGlow( long interval )
+  {
+  long color;
+  blankem();
+  
+  for ( int i = 0; i <= 0x3f; i += 4 )
+    {
+    color = ( (long) i ) << 8;
+    setLeds( color );
+    setColors( interval );
+    }
+
+  delay( 50 );
+  
+  for ( int i = 0x3f; i >= 0; i -= 4 )
+    {
+    color = ( (long) i ) << 8;
+    setLeds( color );
+    setColors( interval );
+    }
+  setLeds( 0 );
+  setColors( interval );
+  delay( 25 );
+  }
+
 void loop() {
   
   for ( int i = 0; i < MAX_LEDS; i++ )
     {
    SB_CommandMode = B00; // Write to PWM control registers
-   SB_RedCommand = 256; // Maximum red
+   SB_RedCommand = 0; // Maximum red
    SB_GreenCommand = 0; // Minimum green
    SB_BlueCommand = 0; // Minimum blue
    SB_SendPacket();
 
-   delay(1000);
+   delay( 0 );
     }
-
-   
-   leds[ 0 ] = 0x00ff0000;
-   leds[ 1 ] = 0x0000ff00;
-   leds[ 2 ] = 0x000000ff;
-   leds[ 3 ] = 0x000f0f0f;
-   leds[ 4 ] = 0x00000000;
-   setColors( 1000 );
-   
-//   for ( int i = 0; i < MAX_LEDS; i++ )
-//     leds[ i ]  = 0;
-//   leds[ 0 ] = 0X00ffffff;
-//   leds[ 1 ] = 0X00ffffff;
-//   leds[ 2 ] = 0X00ffffff;
-//   leds[ 3 ] = 0X00ffffff;
-//   leds[ 4 ] = 0X00ffffff;
-//   setColors( 200 );
-
+    
+/* why doesn't this work reliably???    
+  digitalWrite( enablepin, HIGH );
+  digitalWrite( datapin, LOW );
+  digitalWrite( clockpin, LOW );
+  for ( int i = 0; i < ( MAX_LEDS + 10 ) * 32; i++ )
+    {
+    delay( 2 );
+    digitalWrite( clockpin, HIGH );
+    delay( 2 );
+    digitalWrite( clockpin, LOW );
+    }
+  delay( 25 );
+  digitalWrite( latchpin, HIGH );
+  delay( 25 );
+  digitalWrite( latchpin, LOW );
+  digitalWrite( enablepin, LOW );
+  delay( 500 );
+*/  
+  
+/*
+  // flash lights using enable pin
+  for ( int i = 0; i < 4; i++ )
+    {
+    digitalWrite( enablepin, HIGH );
+    delay( 500 );
+    digitalWrite( enablepin, LOW );
+    delay( 500 );
+    }  
+*/  
+  
+/*   
    for ( int i = 0; i < MAX_LEDS; i++ )
      leds[ i ]  = 0x000000ff;
-   setColors( 1000 );
+   setColors( 100 );
    
    for ( int i = 0; i < MAX_LEDS; i++ )
      leds[ i ]  = 0x0000ff00;
-   setColors( 1000 );
+   setColors( 100 );
 
    for ( int i = 0; i < MAX_LEDS; i++ )
      leds[ i ]  = 0x00ff0000;
-   setColors( 1000 );
+   setColors( 100 );
 
    for ( int i = 0; i < 10; i++ )
      flash( 200, 50 );
      
    for ( int i = 0; i < MAX_LEDS; i++ )
      leds[ i ] = 0;
-     
-   for ( int j = 0; j < 20; j++ )
+*/
+/*
+   for ( int j = 0; j < 3; j++ )
       {
       chaser( 0x00ff0000, 0x000000ff, 0, 200 );     
       chaser( 0, 0x00ff0000, 0x000000ff, 200 );     
       chaser( 0x000000ff, 0, 0x00ff0000, 200 );     
       }
       
-   for ( int j = 0; j < 40; j++ )
+   for ( int j = 0; j < 10; j++ )
      {
-      chaser( 0x0000007f, 0x000000ff, 0x3f, 200 );     
-      chaser( 0x000000ff, 0x0000003f, 0x7f, 200 );     
-      chaser( 0x0000003f, 0x0000007f, 0xff, 200 );     
+      chaser( 0x00000007, 0x00000001, 0x3f, 100 );     
+      chaser( 0x00000001, 0x0000003f, 0x07, 100 );     
+      chaser( 0x0000003f, 0x00000007, 0x01, 100 );     
      }
+*/
 
+  for ( int i = 0; i < 3; i++ )
+    growUp();
+
+/*
+  for ( int i = 0; i < 5; i++ )
+    glow( 0 );  
+    
+  delay( 2000 );
+  for ( int i = 0; i < 5; i++ )
+    greenGlow( 0 );  
+    
+  delay( 2000 );
+*/
+  
+  blueGlow( 0 );
+  redGlow( 0 );
+  blueGlow( 0 );
+  redGlow( 0 );
+  
+  policeLights();
+  
 //   for ( int i = 0; i < MAX_LEDS; i++ )
 //     {
 //     unsigned long tmp;
@@ -197,63 +405,4 @@ void loop() {
 //     leds[ MAX_LEDS - 1 ] = tmp;
 //     setColors( 500 );
 //     }
-
-/*
-   
-   leds[ 0 ] = 0x000f0000;
-   leds[ 1 ] = 0x00000f00;
-   leds[ 2 ] = 0x0000000f;
-   leds[ 3 ] = 0x00707070;
-   leds[ 4 ] = 0x00f0f0f0;
-   setColors( 1000 );
-*/
-
-
-/*
-   for ( int i = 0; i < 1024; i += 32 )
-     {
-     setColor( i, 0, 0, 75 );
-     }
-   for ( int i = 1023; i > 0 ; i -= 32 )
-     setColor( i, 0, 0, 75 );
-   for ( int i = 0; i < 15; i++ )
-     {
-     setColor( i * 64, 0, 0, 50 );
-     }
-   for ( int i = 15; i ; i-- )
-     setColor( i * 64, 0, 0, 50 );
-
-   for ( int i = 0; i < 15; i++ )
-     {
-     setColor( 0, i * 64, 0, 50 );
-     }
-   for ( int i = 15; i ; i-- )
-     setColor( 0, i * 64, 0, 50 );
-     
-   for ( int i = 0; i < 15; i++ )
-     {
-     setColor( 0, 0, i * 64, 50 );
-     }
-   for ( int i = 15; i ; i-- )
-     setColor( 0, 0, i * 64, 50 );
-
-//   digitalWrite( 7, LOW );
-   setColor( 500, 0, 20, 500 );
-//   digitalWrite( 7, HIGH );
-   setColor( 300, 0, 256, 500 );
-//   digitalWrite( 7, LOW );
-   setColor( 200, 0, 500, 500 );
-//   digitalWrite( 7, HIGH );
-
-//   setColor( 1023, 1023, 1023, 10);
-//   delay( 500 );
-
-  for ( int i = 0; i < 10; i++ )
-    {  
-   digitalWrite(enablepin, HIGH );
-   delay( 50 );
-   digitalWrite(enablepin, LOW );
-   delay( 50 );
-    }
-  */
 }
