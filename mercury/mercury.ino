@@ -112,6 +112,46 @@ void continuousFade()
           }
         }
   }
+  
+/*
+ * Bright green, fade to black
+ */
+unsigned char iGreenToBlack  = 0;
+void greenToBlack()
+  {
+    if ( bluPWM )
+      --bluPWM;
+    if ( redPWM )
+      --redPWM;
+      
+    if ( iGreenToBlack++ < ( MAX_PWM << 1 ) )
+      {
+      if ( iGreenToBlack & 1 )
+        --grnPWM;
+      }
+    else
+      timer0Routine = NULL;
+  }
+ 
+/*
+ * Bright red, fade to black
+ */
+unsigned char iRedToBlack  = 0;
+void redToBlack()
+  {
+    if ( bluPWM )
+      --bluPWM;
+    if ( grnPWM )
+      --grnPWM;
+      
+    if ( iRedToBlack++ < ( MAX_PWM << 1 ) )
+      {
+      if ( iRedToBlack & 1 )
+        --redPWM;
+      }
+    else
+      timer0Routine = NULL;
+  }
  
 /*
  *  flash the led's like red/blue police lights
@@ -438,10 +478,10 @@ void setup()
   
   // setup fade routine
   iFade  = 0;
-  timer0Routine = policeLights;
-  redPWM = MAX_PWM;
-  grnPWM = MAX_PWM;
-  bluPWM = MAX_PWM;
+  redPWM = MAX_PWM >> 2;
+  grnPWM = MAX_PWM >> 2;
+  bluPWM = MAX_PWM >> 2;
+  timer0Routine = NULL;
   }
   
 ISR( TIMER0_COMPA_vect ){//timer0 interrupt 2kHz toggles pin 8
@@ -600,13 +640,40 @@ void loop()
           timer0Routine = policeLights;
           break;
           
+        case 'C':
+          Serial.println( (char *) szInputBuf );
+          break;
+          
+        case 'D':
+          redPWM = MAX_PWM >> 2;
+          grnPWM = MAX_PWM >> 2;
+          bluPWM = MAX_PWM >> 2;
+          timer0Routine = NULL;
+          break;
+
         case 'F':
           redPWM = 0;
           grnPWM = 0;
           bluPWM = 0;
           timer0Routine = continuousFade;
-          break;          
+          break;
           
+        case 'G':
+          grnPWM = MAX_PWM;
+          redPWM = MAX_PWM;
+          bluPWM = MAX_PWM;
+          iGreenToBlack = 0;
+          timer0Routine = greenToBlack;
+          break;
+          
+        case 'E':
+          grnPWM = MAX_PWM;
+          redPWM = MAX_PWM;
+          bluPWM = MAX_PWM;
+          iRedToBlack = 0;
+          timer0Routine = redToBlack;
+          break;
+
         case 'R':
 #ifdef  MATRIX        
           value = 0;
@@ -617,8 +684,11 @@ void loop()
           timer0Routine = NULL;          
           break;
           
-        case 'C':
-          Serial.println( (char *) szInputBuf );
+        case 'W':
+          redPWM = MAX_PWM >> 2;
+          grnPWM = 0;
+          bluPWM = 0;
+          timer0Routine = NULL;
           break;
 
         default:
